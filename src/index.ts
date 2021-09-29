@@ -1,3 +1,5 @@
+import './scss/style.scss';
+// import './assets/*';
 import {test} from './test'
 
 
