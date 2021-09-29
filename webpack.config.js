@@ -3,17 +3,34 @@ const HtmlWebpackPlugin = require('html-webpack-plugin');
 const CopyPlugin = require('copy-webpack-plugin');
 const { CleanWebpackPlugin } = require('clean-webpack-plugin');
 const MiniCssExtractPlugin = require('mini-css-extract-plugin');
+const ESLintPlugin = require('eslint-webpack-plugin');
 // import mainImage from './assets/static/[hash][ext][query]';
 
-module.exports = {
+const devServer = (isDev) =>
+  !isDev
+    ? {}
+    : {
+        devServer: {
+          open: true,
+          hot: true,
+          port: 8080,
+          // contentBase: path.join(__dirname, 'public'),
+        },
+      };
+
+const esLintPlugin = (isDev) => !isDev ? [] : [new ESLintPlugin({ extensions: ['ts', 'js'] })];
+
+module.exports = ({ develop }) => ({
+  mode: develop ? 'development' : 'production',
+  devtool: develop ? 'inline-source-map' : false,
   entry: {
-    app: './src/index.ts',
+    app: './src/js/index.ts',
   },
   output: {
+    filename: './js/[name].[contenthash].js',
     path: path.resolve(__dirname, 'dist'),
-    filename: '[name].[contenthash].js',
     // assetModuleFilename: 'assets/[name][ext]',
-    assetModuleFilename: 'assets/[name][ext]',
+    assetModuleFilename: 'assets/[name][ext][query]',
   },
 
   // подключение TypeScript
@@ -25,10 +42,21 @@ module.exports = {
         use: 'ts-loader',
         exclude: /node_modules/,
       },
+      // {
+      //   test: /\.png/,
+      //   type: 'asset/resource'
+      // },
       {
         test: /\.(?:ico|gif|png|jpg|jpeg|svg|webp)$/i,
         type: 'asset/resource',
       },
+      // {
+      //   test: /\.html/,
+      //   type: 'asset/resource',
+      //   generator: {
+      //     filename: 'static/[hash][ext][query]'
+      //   }
+      // },
       {
         test: /\.(woff(2)?|eot|ttf|otf)$/i,
         type: 'asset/resource',
@@ -53,7 +81,8 @@ module.exports = {
       title: 'Hellow',
     }),
     new MiniCssExtractPlugin({
-      filename: '[name].[contenthash].css',
+      filename: './css/[name].[contenthash].css',
+      // filename: 'style.css',
     }),
     // new CopyPlugin({
     //   patterns: [
@@ -61,6 +90,10 @@ module.exports = {
     //     { from: "other", to: "public" },
     //   ],
     // }),
-    new CleanWebpackPlugin(),
+    new CleanWebpackPlugin({cleanStaleWebpackAssets: false}),
+    // new ESLintPlugin({ extensions: ['ts', 'js'] }),
+...esLintPlugin(develop),
   ],
-};
+
+  ...devServer(develop),
+});
